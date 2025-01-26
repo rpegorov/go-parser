@@ -11,7 +11,7 @@ import (
 
 func main() {
 	DB := db.Init()
-	app := fiber.New()
+	app := fiber.New(fiber.Config{Prefork: true})
 	h := handlers.New(DB)
 
 	app.Get("/api/health", h.HealthCheck)

@@ -15,7 +15,8 @@ func New(db *gorm.DB) *Handler {
 
 func (h *Handler) HealthCheck(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status":  "success",
-		"message": "API is up and running",
+		"status":    "success",
+		"message":   "API is up and running",
+		"say Hello": "Hello!!!",
 	})
 }
