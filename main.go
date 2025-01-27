@@ -16,7 +16,7 @@ func main() {
 
 	app.Get("/api/health", h.HealthCheck)
 
-	if err := app.Listen("localhost:" + utils.GoDotEnvVariable("SERVER_PORT")); err != nil {
+	if err := app.Listen(utils.GoDotEnvVariable("SERVER_PORT")); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
