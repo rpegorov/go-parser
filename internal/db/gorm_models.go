@@ -1,12 +1,8 @@
 package db
 
-import (
-	"gorm.io/gorm"
-)
-
 type Enterprise struct {
-	ID            int    `gorm:"primaryKey"`
-	EnterpriseID  int    `gorm:"unique;not null"`
+	ID             int    `gorm:"primaryKey"`
+	EnterpriseID   int    `gorm:"unique;not null"`
 	EnterpriseName string `gorm:"not null"`
 }
 
@@ -47,7 +43,7 @@ type TimeSeries struct {
 }
 
 type ExtendedWorkCenter struct {
-	ID                    int    `gorm:"primaryKey"`
+	ID                    int `gorm:"primaryKey"`
 	RecordStartDate       string
 	RecordEndDate         string
 	ProcessingProgram     string
