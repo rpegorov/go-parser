@@ -10,9 +10,10 @@ import (
 )
 
 func main() {
-	DB := db.Init()
-	app := fiber.New(fiber.Config{Prefork: true})
-	h := handlers.New(DB)
+	databases := db.Init()
+
+	app := fiber.New(fiber.Config{Prefork: false})
+	h := handlers.New(databases.PostgresDB, databases.ClickHouseDB)
 
 	app.Get("/api/health", h.HealthCheck)
 
