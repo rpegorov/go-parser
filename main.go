@@ -6,18 +6,26 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/rpegorov/go-parser/internal/db"
 	"github.com/rpegorov/go-parser/internal/handlers"
+	"github.com/rpegorov/go-parser/internal/middlewares"
+	"github.com/rpegorov/go-parser/internal/routes"
+	"github.com/rpegorov/go-parser/internal/services"
 	"github.com/rpegorov/go-parser/internal/utils"
 )
 
 func main() {
 	databases := db.Init()
+	cookiesStore := utils.NewCookieStore()
+	enterpriceService := services.NewEnterpriseService(databases.PostgresDB)
+	healthService := services.NewHealthService(databases.PostgresDB, databases.ClickHouseDB)
 
-	app := fiber.New(fiber.Config{Prefork: false})
-	h := handlers.New(databases.PostgresDB, databases.ClickHouseDB)
+	app := fiber.New(fiber.Config{Prefork: true})
+	app.Use(middlewares.CookieMiddleware())
+	h := handlers.New(enterpriceService, healthService, cookiesStore)
 
-	app.Get("/api/health", h.HealthCheck)
+	routes.RegisterRoutes(app, h)
 
 	if err := app.Listen(utils.GoDotEnvVariable("SERVER_PORT")); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+
 }
