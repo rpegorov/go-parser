@@ -1,10 +1,10 @@
 package services
 
 type EnterpriseService interface {
-	ParseAndSaveEnterpriseTree(body []byte) (Result, error)
+	ParseAndSaveEnterpriseTree(body []byte) (EnterpriseTree, error)
 }
 
-type Result struct {
+type EnterpriseTree struct {
 	Enterprises int
 	Sites       int
 	Departments int

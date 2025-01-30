@@ -45,20 +45,20 @@ func NewEnterpriseService(db *gorm.DB) *EnterpriseServiceImpl {
 	}
 }
 
-func (s *EnterpriseServiceImpl) ParseAndSaveEnterpriseTree(body []byte) (Result, error) {
+func (s *EnterpriseServiceImpl) ParseAndSaveEnterpriseTree(body []byte) (EnterpriseTree, error) {
 	var root struct {
 		Items []EnterpriseData `json:"items"`
 	}
 	if err := json.Unmarshal(body, &root); err != nil {
 		log.Printf("Ошибка парсинга JSON: %v", err)
-		return Result{}, err
+		return EnterpriseTree{}, err
 	}
 
 	if len(root.Items) == 0 {
-		return Result{}, fmt.Errorf("no enterprise data found")
+		return EnterpriseTree{}, fmt.Errorf("no enterprise data found")
 	}
 
-	var result Result
+	var result EnterpriseTree
 
 	existingStructure := s.getExistingStructure()
 

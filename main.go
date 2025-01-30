@@ -17,10 +17,16 @@ func main() {
 	cookiesStore := utils.NewCookieStore()
 	enterpriceService := services.NewEnterpriseService(databases.PostgresDB)
 	healthService := services.NewHealthService(databases.PostgresDB, databases.ClickHouseDB)
+	indicatorService := services.NewIndicatorService(databases.PostgresDB)
 
 	app := fiber.New(fiber.Config{Prefork: true})
 	app.Use(middlewares.CookieMiddleware())
-	h := handlers.New(enterpriceService, healthService, cookiesStore)
+	h := handlers.New(
+		enterpriceService,
+		healthService,
+		indicatorService,
+		cookiesStore,
+	)
 
 	routes.RegisterRoutes(app, h)
 

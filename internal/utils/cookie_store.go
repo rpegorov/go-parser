@@ -1,5 +1,10 @@
 package utils
 
+import (
+	"fmt"
+	"strings"
+)
+
 type CookieStore struct {
 	Cookies map[string]string
 }
@@ -15,8 +20,13 @@ func (c *CookieStore) Get(name string) (string, bool) {
 	return value, ok
 }
 
-func (c *CookieStore) GetAll() map[string]string {
-	return c.Cookies
+func (c *CookieStore) GetAll() string {
+	cookieHeader := ""
+	for name, value := range c.Cookies {
+		cookieHeader += fmt.Sprintf("%s=%s; ", name, value)
+	}
+	cookieHeader = strings.TrimRight(cookieHeader, "; ")
+	return cookieHeader
 }
 
 func (c *CookieStore) Set(name, value string) {

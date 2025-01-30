@@ -8,13 +8,20 @@ import (
 type Handler struct {
 	enterpriseService services.EnterpriseService
 	healthService     services.HealthService
+	indicatorService  services.IndicatorService
 	CookieStore       *utils.CookieStore
 }
 
-func New(enterpriseService services.EnterpriseService, healthService services.HealthService, cookieStore *utils.CookieStore) *Handler {
+func New(
+	enterpriseService services.EnterpriseService,
+	healthService services.HealthService,
+	indicatorService services.IndicatorService,
+	cookieStore *utils.CookieStore,
+) *Handler {
 	return &Handler{
 		enterpriseService: enterpriseService,
 		healthService:     healthService,
+		indicatorService:  indicatorService,
 		CookieStore:       cookieStore,
 	}
 }
