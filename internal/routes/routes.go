@@ -13,5 +13,6 @@ func RegisterRoutes(app *fiber.App, h *handlers.Handler) {
 	parser := api.Group("/parser")
 	parser.Get("/enterprise", h.ParseEnterprise)
 	parser.Get("/indicators", h.ParseIndicators)
+	parser.Get("/timeseries", h.ParseTimeseries)
 
 }
