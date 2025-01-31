@@ -35,7 +35,6 @@ type Indicator struct {
 }
 
 type TimeSeries struct {
-	ID          int    `gorm:"primaryKey"`
 	IndicatorID int    `gorm:"not null"`
 	EquipmentID int    `gorm:"not null"`
 	DateTime    string `gorm:"not null"`

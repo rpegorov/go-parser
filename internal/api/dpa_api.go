@@ -74,63 +74,61 @@ func GetIndicatorsData(
 	periodEnd string,
 	cookies string,
 ) (data []byte, err error) {
-	var externalURL = utils.GoDotEnvVariable("DPA_SERVER") + "/Dashboard/getIndicatorData"
+	const maxRetries = 3
+	externalURL := utils.GoDotEnvVariable("DPA_SERVER") + "/Dashboard/getIndicatorData"
 
 	client := &http.Client{
-		Timeout: 120 * time.Second,
+		Timeout: 30 * time.Second,
 		Transport: &http.Transport{
-			MaxIdleConns:        10, // Уменьшаем количество простаивающих соединений
-			MaxConnsPerHost:     10, // Ограничиваем количество соединений на хост
-			IdleConnTimeout:     30 * time.Second,
-			DisableKeepAlives:   true, // Отключаем keep-alive
+			MaxIdleConns:        10,
+			MaxConnsPerHost:     10,
+			IdleConnTimeout:     15 * time.Second,
+			DisableKeepAlives:   false, // Оставляем Keep-Alive для стабильности соединений
 			MaxIdleConnsPerHost: 2,
 		},
 	}
+
 	payload := fmt.Sprintf(`{
-        "Indicators": [%d],
-        "EquipmentId": %d,
-        "ShowUnclassified": true,
-        "GroupBy": true,
-        "NotTruncateDatePeriod": true,
-        "ShowServerState": true,
-        "DateTimeFrom": "%s",
-        "DateTimeUntil": "%s"
-    }`, indicatorId, equipmentId, periodStart, periodEnd)
-	maxRetries := 3
+		"Indicators": [%d],
+		"EquipmentId": %d,
+		"ShowUnclassified": true,
+		"GroupBy": true,
+		"NotTruncateDatePeriod": true,
+		"ShowServerState": true,
+		"DateTimeFrom": "%s",
+		"DateTimeUntil": "%s"
+	}`, indicatorId, equipmentId, periodStart, periodEnd)
+
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		req, err := http.NewRequest("POST", externalURL, strings.NewReader(payload))
 		if err != nil {
-			return nil, fmt.Errorf("error creating request: %v", err)
+			return nil, fmt.Errorf("ошибка создания запроса: %v", err)
 		}
 
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Cookie", cookies)
 		req.Header.Set("Accept", "application/json")
-		req.Header.Set("Connection", "close")
 
 		resp, err := client.Do(req)
 		if err != nil {
-			if attempt == maxRetries {
-				return nil, fmt.Errorf("final attempt failed: %v", err)
-			}
-			log.Printf("Attempt %d failed: %v. Retrying...", attempt, err)
-			time.Sleep(time.Second * time.Duration(attempt*2)) // Увеличивающаяся задержка между попытками
+			log.Printf("Попытка %d завершилась ошибкой: %v. Повтор через %d секунд...", attempt, err, attempt*2)
+			time.Sleep(time.Second * time.Duration(attempt*2))
 			continue
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
-			return nil, fmt.Errorf("server returned status code: %d, body: %s", resp.StatusCode, string(body))
+			return nil, fmt.Errorf("сервер вернул код: %d, тело ответа: %s", resp.StatusCode, string(body))
 		}
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("error reading response body: %v", err)
+			return nil, fmt.Errorf("ошибка чтения тела ответа: %v", err)
 		}
 
 		return body, nil
 	}
 
-	return nil, fmt.Errorf("all retry attempts failed")
+	return nil, fmt.Errorf("все попытки завершились неудачей")
 }

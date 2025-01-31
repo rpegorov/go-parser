@@ -4,21 +4,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"sync"
 	"time"
 
 	"github.com/rpegorov/go-parser/internal/api"
 	"github.com/rpegorov/go-parser/internal/db"
+	"github.com/rpegorov/go-parser/internal/utils"
 	"gorm.io/gorm"
 )
 
-type TimeseriesData struct {
-	Data []Data `json:"data"`
-}
-
-type Data struct {
-	DateTime string `json:"dateTime"`
-	Value    any    `json:"value"`
+type TimeSeries struct {
+	IndicatorID int    `gorm:"not null"`
+	EquipmentID int    `gorm:"not null"`
+	DateTime    string `gorm:"not null"`
+	Value       string
 }
 
 type TimeSeriesServiceImpl struct {
@@ -33,111 +33,37 @@ func NewTimeseriesService(dbpg *gorm.DB, dbch *gorm.DB) *TimeSeriesServiceImpl {
 	}
 }
 
-type RequestManager struct {
-	semaphore chan struct{}
-	delay     time.Duration
-}
-
-func NewRequestManager(maxConcurrent int, delay time.Duration) *RequestManager {
-	return &RequestManager{
-		semaphore: make(chan struct{}, maxConcurrent),
-		delay:     delay,
-	}
-}
-
-func (rm *RequestManager) Execute(f func() error) error {
-	rm.semaphore <- struct{}{} // Получаем разрешение
-	defer func() {
-		<-rm.semaphore       // Освобождаем разрешение
-		time.Sleep(rm.delay) // Задержка между запросами
-	}()
-	return f()
-}
-
 const (
-	maxConcurrentRequests = 5       // Максимальное количество параллельных запросов
-	requestDelay          = 100     // Задержка между запросами в миллисекундах
-	bufferSize            = 1000000 // Размер буфера для данных
-	chunkSize             = 100000  // Размер чанка для записи в БД
+	maxConcurrentRequests = 5      // Максимальное количество параллельных запросов
+	requestDelay          = 50     // Задержка между запросами в миллисекундах
+	bufferSize            = 500000 // Размер буфера для данных
+	chunkSize             = 100000 // Размер чанка для записи в БД
 )
 
 func (ts *TimeSeriesServiceImpl) ParseTimeseries(cookies string) error {
 	indicators := ts.GetAllIndicators()
 	log.Printf("Получено индикаторов: %d", len(indicators))
 
-	dataStart := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	dataStart := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	dataEnd := time.Now()
 	const apiDateFormat = "2006-01-02T15:04:05.000Z"
 
-	reqManager := NewRequestManager(maxConcurrentRequests, requestDelay*time.Millisecond)
-
-	// Каналы для обработки данных
-	dataChan := make(chan TimeseriesData, bufferSize)
-	errorChan := make(chan error, len(indicators))
+	dataChan := make(chan TimeSeries, bufferSize)
+	errorChan := make(chan error)
 
 	var wg sync.WaitGroup
 
-	// Запуск обработчика данных
-	processWg := sync.WaitGroup{}
-	processWg.Add(1)
-	go func() {
-		defer processWg.Done()
-		buffer := make([]TimeseriesData, 0, chunkSize)
+	go ts.processDataChunks(dataChan, errorChan)
 
-		for data := range dataChan {
-			buffer = append(buffer, data)
-
-			if len(buffer) >= chunkSize {
-				if err := ts.saveChunkToDB(buffer); err != nil {
-					errorChan <- fmt.Errorf("ошибка сохранения данных: %w", err)
-				}
-				buffer = buffer[:0]
-			}
-		}
-
-		// Сохраняем оставшиеся данные
-		if len(buffer) > 0 {
-			if err := ts.saveChunkToDB(buffer); err != nil {
-				errorChan <- fmt.Errorf("ошибка сохранения финальных данных: %w", err)
-			}
-		}
-	}()
-
-	// Обработка индикаторов
 	for _, indicator := range indicators {
 		wg.Add(1)
-		go func(ind db.Indicator) {
-			defer wg.Done()
-
-			currentStart := dataStart
-			for currentStart.Before(dataEnd) {
-				periodEnd := currentStart.Add(time.Hour * 24 * 7)
-
-				err := reqManager.Execute(func() error {
-					return ts.processTimeRange(ind, currentStart, periodEnd, apiDateFormat, cookies, dataChan)
-				})
-
-				if err != nil {
-					errorChan <- fmt.Errorf("ошибка обработки индикатора %d: %w", ind.IndicatorID, err)
-					return
-				}
-
-				currentStart = periodEnd
-			}
-		}(indicator)
+		go ts.processIndicator(indicator, dataStart, dataEnd, apiDateFormat, cookies, dataChan, &wg)
 	}
 
-	// Ожидание завершения всех горутин
-	go func() {
-		wg.Wait()
-		close(dataChan)
-	}()
+	wg.Wait()
+	close(dataChan)
 
-	// Ожидание завершения обработки данных
-	processWg.Wait()
-	close(errorChan)
-
-	// Проверка ошибок
+	// Обработка ошибок
 	var errList []error
 	for err := range errorChan {
 		errList = append(errList, err)
@@ -150,42 +76,105 @@ func (ts *TimeSeriesServiceImpl) ParseTimeseries(cookies string) error {
 	return nil
 }
 
+func (ts *TimeSeriesServiceImpl) processIndicator(
+	indicator db.Indicator,
+	startTime, endTime time.Time,
+	dateFormat, cookies string,
+	dataChan chan<- TimeSeries,
+	wg *sync.WaitGroup,
+) {
+	defer wg.Done()
+	currentStart := startTime
+
+	for currentStart.Before(endTime) {
+		periodEnd := currentStart.Add(time.Hour * 24 * 7)
+
+		err := ts.processTimeRange(indicator, currentStart, periodEnd, dateFormat, cookies, dataChan)
+		if err != nil {
+			log.Printf("Ошибка обработки индикатора %d: %v", indicator.IndicatorID, err)
+			return
+		}
+
+		currentStart = periodEnd
+	}
+}
+
 func (ts *TimeSeriesServiceImpl) processTimeRange(
 	indicator db.Indicator,
-	startTime time.Time,
-	endTime time.Time,
-	dateFormat string,
-	cookies string,
-	dataChan chan<- TimeseriesData,
+	startTime, endTime time.Time,
+	dateFormat, cookies string,
+	dataChan chan<- TimeSeries,
 ) error {
 	startStr := startTime.Format(dateFormat)
 	endStr := endTime.Format(dateFormat)
 
-	responseData, err := api.GetIndicatorsData(
-		indicator.IndicatorID,
-		indicator.EquipmentID,
-		startStr,
-		endStr,
-		cookies,
-	)
+	responseData, err := utils.RerformRequest(func() ([]byte, error) {
+		return api.GetIndicatorsData(indicator.IndicatorID, indicator.EquipmentID, startStr, endStr, cookies)
+	})
 	if err != nil {
-		return fmt.Errorf("ошибка запроса данных: %w", err)
+		log.Printf("Ошибка получения данных: %v", err)
 	}
 
 	if len(responseData) == 0 {
 		return nil
 	}
 
-	var response TimeseriesData
-	if err := json.Unmarshal(responseData, &response); err != nil {
+	cleanedData, err := cleanResponseData(responseData)
+	if err != nil {
+		return err
+	}
+
+	var rawResponse struct {
+		Data []map[string]any `json:"data"`
+	}
+
+	if err := json.Unmarshal(cleanedData, &rawResponse); err != nil {
 		return fmt.Errorf("ошибка парсинга JSON: %w", err)
 	}
 
-	dataChan <- response
+	for _, entry := range rawResponse.Data {
+		dateTime, ok := entry["dateTime"].(string)
+		if !ok {
+			log.Printf("Пропущена запись без корректного dateTime: %+v", entry)
+			continue
+		}
+
+		value := normalizeValue(entry["value"])
+
+		dataChan <- TimeSeries{
+			IndicatorID: indicator.IndicatorID,
+			EquipmentID: indicator.EquipmentID,
+			DateTime:    dateTime,
+			Value:       value,
+		}
+	}
+
 	return nil
 }
 
-func (ts *TimeSeriesServiceImpl) saveChunkToDB(data []TimeseriesData) error {
+func (ts *TimeSeriesServiceImpl) processDataChunks(dataChan <-chan TimeSeries, errorChan chan<- error) {
+	buffer := make([]TimeSeries, 0, chunkSize)
+
+	for data := range dataChan {
+		buffer = append(buffer, data)
+
+		if len(buffer) >= chunkSize {
+			if err := ts.saveChunkToDB(buffer); err != nil {
+				errorChan <- fmt.Errorf("ошибка сохранения данных: %w", err)
+			}
+			buffer = buffer[:0]
+		}
+	}
+
+	if len(buffer) > 0 {
+		if err := ts.saveChunkToDB(buffer); err != nil {
+			errorChan <- fmt.Errorf("ошибка сохранения финальных данных: %w", err)
+		}
+	}
+	close(errorChan)
+}
+
+func (ts *TimeSeriesServiceImpl) saveChunkToDB(data []TimeSeries) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -199,4 +188,26 @@ func (ts *TimeSeriesServiceImpl) GetAllIndicators() []db.Indicator {
 	var indicators []db.Indicator
 	ts.dbpg.Find(&indicators)
 	return indicators
+}
+
+func normalizeValue(value any) string {
+	switch v := value.(type) {
+	case float64:
+		return fmt.Sprintf("%.6f", v)
+	case int, int32, int64:
+		return fmt.Sprintf("%d", v)
+	case string:
+		return v
+	case bool:
+		return fmt.Sprintf("%t", v)
+	case nil:
+		return "null"
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+func cleanResponseData(responseData []byte) ([]byte, error) {
+	re := regexp.MustCompile(`"\$type":("[^"]*"),?`)
+	return re.ReplaceAll(responseData, []byte("")), nil
 }

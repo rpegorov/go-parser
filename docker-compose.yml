@@ -46,6 +46,7 @@ services:
     container_name: clickhouse
     hostname: clickhouse
     volumes:
+      - ./db-volumes/database/clickhouse:/var/lib/clickhouse/data
       - ./init-db/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
       - ./init-db/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
     ports:
