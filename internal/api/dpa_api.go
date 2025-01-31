@@ -78,14 +78,7 @@ func GetIndicatorsData(
 	externalURL := utils.GoDotEnvVariable("DPA_SERVER") + "/Dashboard/getIndicatorData"
 
 	client := &http.Client{
-		Timeout: 30 * time.Second,
-		Transport: &http.Transport{
-			MaxIdleConns:        10,
-			MaxConnsPerHost:     10,
-			IdleConnTimeout:     15 * time.Second,
-			DisableKeepAlives:   false, // Оставляем Keep-Alive для стабильности соединений
-			MaxIdleConnsPerHost: 2,
-		},
+		Timeout: 60 * time.Second,
 	}
 
 	payload := fmt.Sprintf(`{
@@ -99,36 +92,36 @@ func GetIndicatorsData(
 		"DateTimeUntil": "%s"
 	}`, indicatorId, equipmentId, periodStart, periodEnd)
 
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		req, err := http.NewRequest("POST", externalURL, strings.NewReader(payload))
-		if err != nil {
-			return nil, fmt.Errorf("ошибка создания запроса: %v", err)
-		}
-
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Cookie", cookies)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Printf("Попытка %d завершилась ошибкой: %v. Повтор через %d секунд...", attempt, err, attempt*2)
-			time.Sleep(time.Second * time.Duration(attempt*2))
-			continue
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			body, _ := io.ReadAll(resp.Body)
-			return nil, fmt.Errorf("сервер вернул код: %d, тело ответа: %s", resp.StatusCode, string(body))
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("ошибка чтения тела ответа: %v", err)
-		}
-
-		return body, nil
+	// for attempt := 1; attempt <= maxRetries; attempt++ {
+	req, err := http.NewRequest("POST", externalURL, strings.NewReader(payload))
+	if err != nil {
+		return nil, fmt.Errorf("ошибка создания запроса: %v", err)
 	}
 
-	return nil, fmt.Errorf("все попытки завершились неудачей")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Cookie", cookies)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Попытка завершилась ошибкой: %s", err)
+		// time.Sleep(time.Second * time.Duration(attempt*2))
+		// continue
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("сервер вернул код: %d, тело ответа: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка чтения тела ответа: %v", err)
+	}
+
+	return body, nil
 }
+
+// return nil, fmt.Errorf("все попытки завершились неудачей")
+// }

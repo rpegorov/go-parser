@@ -109,6 +109,7 @@ func (ts *TimeSeriesServiceImpl) processTimeRange(
 	endStr := endTime.Format(dateFormat)
 
 	responseData, err := utils.RerformRequest(func() ([]byte, error) {
+		fmt.Printf("response send, indicator id : %d, equipment id : %d, start time : %s, end time : %s \n", indicator.IndicatorID, indicator.EquipmentID, startStr, endStr)
 		return api.GetIndicatorsData(indicator.IndicatorID, indicator.EquipmentID, startStr, endStr, cookies)
 	})
 	if err != nil {
@@ -147,6 +148,7 @@ func (ts *TimeSeriesServiceImpl) processTimeRange(
 			DateTime:    dateTime,
 			Value:       value,
 		}
+		fmt.Printf("chan len : %d \n", len(dataChan))
 	}
 
 	return nil
