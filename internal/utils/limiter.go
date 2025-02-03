@@ -1,6 +1,6 @@
 package utils
 
-const requestLimit = 100 // Максимум 5 запросов одновременно
+const requestLimit = 25 // Максимум 5 запросов одновременно
 var requestSemaphore = make(chan struct{}, requestLimit)
 
 func RerformRequest(fn func() ([]byte, error)) ([]byte, error) {

@@ -9,6 +9,17 @@ import (
 	"gorm.io/gorm"
 )
 
+type EnterpriseService interface {
+	ParseAndSaveEnterpriseTree(body []byte) (EnterpriseTree, error)
+}
+
+type EnterpriseTree struct {
+	Enterprises int
+	Sites       int
+	Departments int
+	Equipment   int
+}
+
 type EnterpriseData struct {
 	EnterpriseID   int        `json:"enterpriseId"`
 	EnterpriseName string     `json:"text"`

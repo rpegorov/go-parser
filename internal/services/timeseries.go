@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"sync"
 	"time"
@@ -13,6 +14,11 @@ import (
 	"github.com/rpegorov/go-parser/internal/utils"
 	"gorm.io/gorm"
 )
+
+type TimeseriesService interface {
+	ParseTimeseries(cookies string) error
+	GetAllIndicators() []db.Indicator
+}
 
 type TimeSeries struct {
 	IndicatorID int    `gorm:"not null"`
@@ -87,7 +93,7 @@ func (ts *TimeSeriesServiceImpl) processIndicator(
 	currentStart := startTime
 
 	for currentStart.Before(endTime) {
-		periodEnd := currentStart.Add(time.Hour * 24 * 7)
+		periodEnd := currentStart.Add(time.Hour * 24 * 3)
 
 		err := ts.processTimeRange(indicator, currentStart, periodEnd, dateFormat, cookies, dataChan)
 		if err != nil {
@@ -109,11 +115,18 @@ func (ts *TimeSeriesServiceImpl) processTimeRange(
 	endStr := endTime.Format(dateFormat)
 
 	responseData, err := utils.RerformRequest(func() ([]byte, error) {
-		fmt.Printf("response send, indicator id : %d, equipment id : %d, start time : %s, end time : %s \n", indicator.IndicatorID, indicator.EquipmentID, startStr, endStr)
+		// fmt.Printf("response send, indicator id : %d, equipment id : %d, start time : %s, end time : %s \n", indicator.IndicatorID, indicator.EquipmentID, startStr, endStr)
 		return api.GetIndicatorsData(indicator.IndicatorID, indicator.EquipmentID, startStr, endStr, cookies)
 	})
 	if err != nil {
-		log.Printf("Ошибка получения данных: %v", err)
+		log.Printf(`Ошибка получения данных: %v
+ Индикатор: %d, Оборудование: %d, Время: %s - %s
+`, err, indicator.IndicatorID, indicator.EquipmentID, startStr, endStr)
+		file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatal("Failed to open log file:", err)
+		}
+		log.SetOutput(file)
 	}
 
 	if len(responseData) == 0 {
@@ -148,7 +161,7 @@ func (ts *TimeSeriesServiceImpl) processTimeRange(
 			DateTime:    dateTime,
 			Value:       value,
 		}
-		fmt.Printf("chan len : %d \n", len(dataChan))
+		// fmt.Printf("chan len : %d \n", len(dataChan))
 	}
 
 	return nil

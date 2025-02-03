@@ -9,6 +9,15 @@ import (
 	"gorm.io/gorm"
 )
 
+type IndicatorService interface {
+	ParseIndicators(body []byte, equipmentId int) (IndicatorCount, error)
+	GetEquipment() []int
+}
+
+type IndicatorCount struct {
+	Total int
+}
+
 type IndicatorData struct {
 	IndicatorID   int    `json:"id"`
 	IndicatorName string `json:"name"`

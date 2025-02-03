@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -78,7 +79,7 @@ func GetIndicatorsData(
 	externalURL := utils.GoDotEnvVariable("DPA_SERVER") + "/Dashboard/getIndicatorData"
 
 	client := &http.Client{
-		Timeout: 80 * time.Second,
+		Timeout: 180 * time.Second,
 	}
 
 	payload := fmt.Sprintf(`{
@@ -117,6 +118,12 @@ func GetIndicatorsData(
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Panicf("ошибка чтения тела ответа: %v", err)
+		file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatal("Failed to open log file:", err)
+		}
+		log.SetOutput(file)
 		return nil, fmt.Errorf("ошибка чтения тела ответа: %v", err)
 	}
 
