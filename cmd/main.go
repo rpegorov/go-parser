@@ -9,16 +9,19 @@ import (
 	"github.com/rpegorov/go-parser/internal/middlewares"
 	"github.com/rpegorov/go-parser/internal/routes"
 	"github.com/rpegorov/go-parser/internal/services"
+	"github.com/rpegorov/go-parser/internal/services/ml"
+	"github.com/rpegorov/go-parser/internal/services/parser"
 	"github.com/rpegorov/go-parser/internal/utils"
 )
 
 func main() {
 	databases := db.Init()
 	cookiesStore := utils.NewCookieStore()
-	enterpriceService := services.NewEnterpriseService(databases.PostgresDB)
+	enterpriceService := parser.NewEnterpriseService(databases.PostgresDB)
 	healthService := services.NewHealthService(databases.PostgresDB, databases.ClickHouseDB)
-	indicatorService := services.NewIndicatorService(databases.PostgresDB)
-	timeseriesService := services.NewTimeseriesService(databases.PostgresDB, databases.ClickHouseDB)
+	indicatorService := parser.NewIndicatorService(databases.PostgresDB)
+	timeseriesService := parser.NewTimeseriesService(databases.PostgresDB, databases.ClickHouseDB)
+	mlService := ml.NewMLService(databases.PostgresDB, databases.ClickHouseDB)
 
 	app := fiber.New(fiber.Config{Prefork: false})
 	app.Use(middlewares.CookieMiddleware())
@@ -27,6 +30,7 @@ func main() {
 		healthService,
 		indicatorService,
 		timeseriesService,
+		mlService,
 		cookiesStore,
 	)
 

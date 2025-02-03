@@ -2,22 +2,26 @@ package handlers
 
 import (
 	"github.com/rpegorov/go-parser/internal/services"
+	"github.com/rpegorov/go-parser/internal/services/ml"
+	"github.com/rpegorov/go-parser/internal/services/parser"
 	"github.com/rpegorov/go-parser/internal/utils"
 )
 
 type Handler struct {
-	enterpriseService services.EnterpriseService
+	enterpriseService parser.EnterpriseService
 	healthService     services.HealthService
-	indicatorService  services.IndicatorService
-	timeseriesService services.TimeseriesService
+	indicatorService  parser.IndicatorService
+	timeseriesService parser.TimeseriesService
+	MLService         ml.MLService
 	CookieStore       *utils.CookieStore
 }
 
 func New(
-	enterpriseService services.EnterpriseService,
+	enterpriseService parser.EnterpriseService,
 	healthService services.HealthService,
-	indicatorService services.IndicatorService,
-	timeseriesService services.TimeseriesService,
+	indicatorService parser.IndicatorService,
+	timeseriesService parser.TimeseriesService,
+	MLService ml.MLService,
 	cookieStore *utils.CookieStore,
 ) *Handler {
 	return &Handler{
@@ -25,6 +29,7 @@ func New(
 		healthService:     healthService,
 		indicatorService:  indicatorService,
 		timeseriesService: timeseriesService,
+		MLService:         MLService,
 		CookieStore:       cookieStore,
 	}
 }

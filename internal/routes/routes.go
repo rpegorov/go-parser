@@ -10,6 +10,15 @@ func RegisterRoutes(app *fiber.App, h *handlers.Handler) {
 	api.Get("/health", h.HealthCheck)
 	api.Post("/login", h.Login)
 
+	ml := api.Group("/ml")
+	ml.Get("/time-series", h.GetByDataRangeAndEqIdIndId)
+	// get("/equipment-tree"
+	// get("/equipment/:id" req.param("id");
+	// get("/workcenter-info" { start, end, equipmentId } = c.req.query();
+	// get("/workcenter-info/:id" req.param("id");
+	// returning { "data": result })
+	//
+
 	parser := api.Group("/parser")
 	parser.Get("/enterprise", h.ParseEnterprise)
 	parser.Get("/indicators", h.ParseIndicators)
