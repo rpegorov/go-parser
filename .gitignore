@@ -1,2 +1,4 @@
 .env_local
 /build
+.lh
+db-volumes

@@ -78,7 +78,7 @@ func GetIndicatorsData(
 	externalURL := utils.GoDotEnvVariable("DPA_SERVER") + "/Dashboard/getIndicatorData"
 
 	client := &http.Client{
-		Timeout: 60 * time.Second,
+		Timeout: 80 * time.Second,
 	}
 
 	payload := fmt.Sprintf(`{

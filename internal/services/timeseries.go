@@ -34,18 +34,18 @@ func NewTimeseriesService(dbpg *gorm.DB, dbch *gorm.DB) *TimeSeriesServiceImpl {
 }
 
 const (
-	maxConcurrentRequests = 5      // Максимальное количество параллельных запросов
-	requestDelay          = 50     // Задержка между запросами в миллисекундах
-	bufferSize            = 500000 // Размер буфера для данных
-	chunkSize             = 100000 // Размер чанка для записи в БД
+	maxConcurrentRequests = 5       // Максимальное количество параллельных запросов
+	requestDelay          = 50      // Задержка между запросами в миллисекундах
+	bufferSize            = 1000000 // Размер буфера для данных
+	chunkSize             = 100000  // Размер чанка для записи в БД
 )
 
 func (ts *TimeSeriesServiceImpl) ParseTimeseries(cookies string) error {
 	indicators := ts.GetAllIndicators()
 	log.Printf("Получено индикаторов: %d", len(indicators))
 
-	dataStart := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
-	dataEnd := time.Now()
+	dataStart := time.Date(2023, 11, 14, 0, 0, 0, 0, time.UTC)
+	dataEnd := time.Date(2024, 11, 20, 10, 19, 57, 884, time.UTC)
 	const apiDateFormat = "2006-01-02T15:04:05.000Z"
 
 	dataChan := make(chan TimeSeries, bufferSize)
