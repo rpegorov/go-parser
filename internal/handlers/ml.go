@@ -33,3 +33,17 @@ func (h *Handler) GetEquipmentTree(c *fiber.Ctx) error {
 		"data": result,
 	})
 }
+
+func (h *Handler) GetEquipmentById(c *fiber.Ctx) error {
+	equipmentId := c.Params("id")
+	result, err := h.MLService.GetEquipmentById(equipmentId)
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"data": result,
+	})
+}
