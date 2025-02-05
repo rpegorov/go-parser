@@ -20,3 +20,16 @@ func (h *Handler) GetByDataRangeAndEqIdIndId(c *fiber.Ctx) error {
 		"data": result,
 	})
 }
+
+func (h *Handler) GetEquipmentTree(c *fiber.Ctx) error {
+	result, err := h.MLService.GetEquipmentTree()
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"data": result,
+	})
+}
