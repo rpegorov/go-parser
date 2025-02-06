@@ -47,3 +47,33 @@ func (h *Handler) GetEquipmentById(c *fiber.Ctx) error {
 		"data": result,
 	})
 }
+
+func (h *Handler) GetWorkCentrInfoById(c *fiber.Ctx) error {
+	equipmentId := c.Params("id")
+	result, err := h.MLService.GetWorkCentrInfoById(equipmentId)
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"data": result,
+	})
+}
+
+func (h *Handler) GetWorkCentrInfoByIdAndDate(c *fiber.Ctx) error {
+	equipmentId := c.Query("equipmentId")
+	dateStart := c.Query("dateStart")
+	dateEnd := c.Query("dateEnd")
+	result, err := h.MLService.GetWorkCentrInfoByIdAndDate(equipmentId, dateStart, dateEnd)
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"data": result,
+	})
+}

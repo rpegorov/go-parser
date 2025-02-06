@@ -12,6 +12,8 @@ type MLService interface {
 	GetByDataRangeAndEqIdIndId(dataStart, dataEnd, equipment, indicator string) ([]db.TimeSeries, error)
 	GetEquipmentTree() ([]equipmentTree, error)
 	GetEquipmentById(equipmentId string) ([]db.Equipment, error)
+	GetWorkCentrInfoById(equipmentId string) ([]db.ExtendedWorkCenter, error)
+	GetWorkCentrInfoByIdAndDate(equipmentId, dateStart, dateEnd string) ([]db.ExtendedWorkCenter, error)
 }
 
 type MLServiceImpl struct {
@@ -108,6 +110,32 @@ func (s *MLServiceImpl) GetEquipmentById(equipmentId string) ([]db.Equipment, er
 	}
 	var result = []db.Equipment{}
 	err = s.dbpg.Where("equipment.equipment_id = ?", id).Find(&result).Error
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *MLServiceImpl) GetWorkCentrInfoById(equipmentId string) ([]db.ExtendedWorkCenter, error) {
+	var id, err = strconv.Atoi(equipmentId)
+	if err != nil {
+		return nil, err
+	}
+	var result = []db.ExtendedWorkCenter{}
+	err = s.dbch.Where("equipment_id = ?", id).Find(&result).Error
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *MLServiceImpl) GetWorkCenterByDateRangeAndEquipment(dataStart, dataEnd, equipmentId string) ([]db.ExtendedWorkCenter, error) {
+	var id, err = strconv.Atoi(equipmentId)
+	if err != nil {
+		return nil, err
+	}
+	var result = []db.ExtendedWorkCenter{}
+	err = s.dbch.Where("date_time BETWEEN ? AND ? AND equipment_id = ?", dataStart, dataEnd, id).Find(&result).Error
 	if err != nil {
 		return nil, err
 	}

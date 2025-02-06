@@ -14,10 +14,8 @@ func RegisterRoutes(app *fiber.App, h *handlers.Handler) {
 	ml.Get("/time-series", h.GetByDataRangeAndEqIdIndId)
 	ml.Get("/equipment-tree", h.GetEquipmentTree)
 	ml.Get("/equipment/:id", h.GetEquipmentById)
-	// get("/workcenter-info" { start, end, equipmentId } = c.req.query();
-	// get("/workcenter-info/:id" req.param("id");
-	// returning { "data": result })
-	//
+	ml.Get("/workcenter-info/:id", h.GetWorkCentrInfoById)
+	ml.Get("/workcenter-info", h.GetWorkCentrInfoByIdAndDate)
 
 	parser := api.Group("/parser")
 	parser.Get("/enterprise", h.ParseEnterprise)
