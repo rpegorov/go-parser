@@ -14,7 +14,7 @@ func (h *Handler) ParseWorkcenter(c *fiber.Ctx) error {
 	}
 	go func() {
 		log.Println("Start parsing workcenter")
-		if err := h.workCentrService.ParseWorkcentrInfo(cookies); err != nil {
+		if err := h.workCenterService.ParseWorkcenterInfo(cookies); err != nil {
 			log.Printf("Ошибка парсинга информации оборудования: %v", err)
 		} else {
 			log.Println("Парсинг завершен")

@@ -5,12 +5,12 @@ import (
 )
 
 func (h *Handler) GetByDataRangeAndEqIdIndId(c *fiber.Ctx) error {
-	dataStart := c.Query("dataStart")
+	dateStart := c.Query("dateStart")
 	dateEnd := c.Query("dateEnd")
 	equipment := c.Query("equipment")
 	indicator := c.Query("indicator")
 
-	result, err := h.MLService.GetByDataRangeAndEqIdIndId(dataStart, dateEnd, equipment, indicator)
+	result, err := h.MLService.GetByDataRangeAndEqIdIndId(dateStart, dateEnd, equipment, indicator)
 	if err != nil {
 		return c.JSON(fiber.Map{
 			"error": err.Error(),
@@ -64,8 +64,8 @@ func (h *Handler) GetWorkCentrInfoById(c *fiber.Ctx) error {
 
 func (h *Handler) GetWorkCentrInfoByIdAndDate(c *fiber.Ctx) error {
 	equipmentId := c.Query("equipmentId")
-	dateStart := c.Query("dateStart")
-	dateEnd := c.Query("dateEnd")
+	dateStart := c.Query("start")
+	dateEnd := c.Query("end")
 	result, err := h.MLService.GetWorkCentrInfoByIdAndDate(equipmentId, dateStart, dateEnd)
 	if err != nil {
 		return c.JSON(fiber.Map{

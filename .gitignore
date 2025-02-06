@@ -1,4 +1,5 @@
 .env_local
+.idea
 /cmd/.env_local
 /build
 .lh

@@ -15,25 +15,22 @@ import (
 	"gorm.io/gorm"
 )
 
-type WorkcentrService interface {
-	ParseWorkcentrInfo(cookies string) error
+type WorkcenterService interface {
+	ParseWorkcenterInfo(cookies string) error
 }
 
-type WorkcentrServiceImpl struct {
+type WorkcenterServiceImpl struct {
 	db *gorm.DB
 }
 
-func NewWorkcentrService(db *gorm.DB) *WorkcentrServiceImpl {
-	return &WorkcentrServiceImpl{
+func NewWorkcenterService(db *gorm.DB) *WorkcenterServiceImpl {
+	return &WorkcenterServiceImpl{
 		db: db,
 	}
 }
 
-type WorkCentrInfo struct {
+type WorkCenterInfo struct {
 	GanttResult GanttResult `json:"ganttResult"`
-	IDRecord    int64       `json:"id"`
-	Start       string      `json:"start"`
-	End         string      `json:"end"`
 }
 
 type GanttResult struct {
@@ -47,6 +44,9 @@ type EquipmentSummaryGanttSegments struct {
 	EquipmentID       int            `json:"equipmentId"`
 	MachineStateType  int            `json:"machineStateType"`
 	DowntimeInfo      DowntimeInfo   `json:"downtimeInfo"`
+	IDRecord          int64          `json:"id"`
+	Start             string         `json:"start"`
+	End               string         `json:"end"`
 }
 
 type DowntimeInfo struct {
@@ -61,14 +61,14 @@ type Reasons struct {
 	OperatorComment       string `json:"operatorComment"`
 }
 
-func (s *WorkcentrServiceImpl) ParseWorkcentrInfo(cookies string) error {
-	const buffer = 90000
+func (s *WorkcenterServiceImpl) ParseWorkcenterInfo(cookies string) error {
+	const buffer = 30000
 	equipments := s.GetAllEquipmentIds()
 	dataStart := time.Date(2023, 11, 14, 0, 0, 0, 0, time.UTC)
 	dataEnd := time.Date(2024, 11, 20, 10, 19, 57, 884, time.UTC)
 	const apiDateFormat = "2006-01-02T15:04:05.000Z"
 	fmt.Print("Start parse\n")
-	dataChan := make(chan WorkCentrInfo, buffer)
+	dataChan := make(chan WorkCenterInfo, buffer)
 	errorChan := make(chan error)
 
 	var wg sync.WaitGroup
@@ -95,13 +95,13 @@ func (s *WorkcentrServiceImpl) ParseWorkcentrInfo(cookies string) error {
 	return nil
 }
 
-func (s *WorkcentrServiceImpl) getWorkcenterInfo(
+func (s *WorkcenterServiceImpl) getWorkcenterInfo(
 	equipment db.Equipment,
 	dateStart time.Time,
 	dateEnd time.Time,
 	apiDateFormat string,
 	cookies string,
-	dataChan chan<- WorkCentrInfo,
+	dataChan chan<- WorkCenterInfo,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
@@ -119,13 +119,13 @@ func (s *WorkcentrServiceImpl) getWorkcenterInfo(
 	}
 }
 
-func (s *WorkcentrServiceImpl) proccesTimeRange(
+func (s *WorkcenterServiceImpl) proccesTimeRange(
 	equipment db.Equipment,
 	dateStart time.Time,
 	dateEnd time.Time,
 	apiDateFormat string,
 	cookies string,
-	dataChan chan<- WorkCentrInfo,
+	dataChan chan<- WorkCenterInfo,
 ) error {
 
 	responseData, err := utils.RerformRequest(func() ([]byte, error) {
@@ -142,7 +142,7 @@ func (s *WorkcentrServiceImpl) proccesTimeRange(
 	if len(responseData) == 0 {
 		return nil
 	}
-	var root []WorkCentrInfo
+	var root []WorkCenterInfo
 
 	if err := json.Unmarshal(responseData, &root); err != nil {
 		log.Printf("ошибка парсинга JSON: %v", err)
@@ -155,9 +155,9 @@ func (s *WorkcentrServiceImpl) proccesTimeRange(
 	return nil
 }
 
-func (s *WorkcentrServiceImpl) processDataChunks(dataChan <-chan WorkCentrInfo, errorChan chan<- error) {
-	const chunk = 30000
-	buffer := make([]WorkCentrInfo, 0, chunk)
+func (s *WorkcenterServiceImpl) processDataChunks(dataChan <-chan WorkCenterInfo, errorChan chan<- error) {
+	const chunk = 100
+	buffer := make([]WorkCenterInfo, 0, chunk)
 
 	for data := range dataChan {
 		buffer = append(buffer, data)
@@ -180,28 +180,28 @@ func (s *WorkcentrServiceImpl) processDataChunks(dataChan <-chan WorkCentrInfo, 
 	close(errorChan)
 }
 
-func (s *WorkcentrServiceImpl) saveChunkToDB(data []WorkCentrInfo) error {
+func (s *WorkcenterServiceImpl) saveChunkToDB(data []WorkCenterInfo) error {
 	if len(data) == 0 {
 		return nil
 	}
 	var records []db.ExtendedWorkCenter
 	for _, info := range data {
-		records = append(records, mapWorkCentrInfoToExtendedWorkCenter(info)...)
+		records = append(records, mapWorkCenterInfoToExtendedWorkCenter(info)...)
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Create(&records).Error
+		return tx.CreateInBatches(&records, 5000).Error
 	})
 }
 
-func (s *WorkcentrServiceImpl) GetAllEquipmentIds() []db.Equipment {
+func (s *WorkcenterServiceImpl) GetAllEquipmentIds() []db.Equipment {
 	var equipments []db.Equipment
 	s.db.Find(&equipments)
 	fmt.Printf("equipments: %v", equipments)
 	return equipments
 }
 
-func mapWorkCentrInfoToExtendedWorkCenter(info WorkCentrInfo) []db.ExtendedWorkCenter {
+func mapWorkCenterInfoToExtendedWorkCenter(info WorkCenterInfo) []db.ExtendedWorkCenter {
 	var result []db.ExtendedWorkCenter
 
 	for _, segment := range info.GanttResult.EquipmentSummaryGanttSegments {
@@ -217,9 +217,9 @@ func mapWorkCentrInfoToExtendedWorkCenter(info WorkCentrInfo) []db.ExtendedWorkC
 				ReasonName:            reason.ReasonName,
 				UserName:              reason.UserName,
 				OperatorComment:       reason.OperatorComment,
-				IDRecord:              info.IDRecord,
-				Start:                 info.Start,
-				End:                   info.End,
+				IDRecord:              segment.IDRecord,
+				Start:                 segment.Start,
+				End:                   segment.End,
 			})
 		}
 	}

@@ -39,7 +39,7 @@ func NewMLService(dbpg *gorm.DB, dbch *gorm.DB) *MLServiceImpl {
 	}
 }
 
-func (s *MLServiceImpl) GetByDataRangeAndEqIdIndId(dataStart, dataEnd, equipment, indicator string) ([]db.TimeSeries, error) {
+func (s *MLServiceImpl) GetByDataRangeAndEqIdIndId(dateStart, dateEnd, equipment, indicator string) ([]db.TimeSeries, error) {
 	equipmentId, err := strconv.Atoi(equipment)
 	indicatorId, err := strconv.Atoi(indicator)
 	if err != nil {
@@ -48,7 +48,7 @@ func (s *MLServiceImpl) GetByDataRangeAndEqIdIndId(dataStart, dataEnd, equipment
 
 	var results []db.TimeSeries
 	err = s.dbch.Where("date_time BETWEEN ? AND ? AND equipment_id = ? AND indicator_id = ?",
-		dataStart, dataEnd, equipmentId, indicatorId).Find(&results).Error
+		dateStart, dateEnd, equipmentId, indicatorId).Find(&results).Error
 	if err != nil {
 		return nil, err
 	}
@@ -122,20 +122,20 @@ func (s *MLServiceImpl) GetWorkCentrInfoById(equipmentId string) ([]db.ExtendedW
 		return nil, err
 	}
 	var result = []db.ExtendedWorkCenter{}
-	err = s.dbch.Where("equipment_id = ?", id).Find(&result).Error
+	err = s.dbpg.Where("equipment_id = ?", id).Find(&result).Error
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (s *MLServiceImpl) GetWorkCenterByDateRangeAndEquipment(dataStart, dataEnd, equipmentId string) ([]db.ExtendedWorkCenter, error) {
+func (s *MLServiceImpl) GetWorkCentrInfoByIdAndDate(equipmentId, dateStart, dateEnd string) ([]db.ExtendedWorkCenter, error) {
 	var id, err = strconv.Atoi(equipmentId)
 	if err != nil {
 		return nil, err
 	}
 	var result = []db.ExtendedWorkCenter{}
-	err = s.dbch.Where("date_time BETWEEN ? AND ? AND equipment_id = ?", dataStart, dataEnd, id).Find(&result).Error
+	err = s.dbpg.Where("record_start_date BETWEEN ? AND ? AND equipment_id = ?", dateEnd, dateStart, id).Find(&result).Error
 	if err != nil {
 		return nil, err
 	}
