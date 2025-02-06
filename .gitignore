@@ -1,5 +1,6 @@
 .env_local
 .idea
+.fleet
 /cmd/.env_local
 /build
 .lh
