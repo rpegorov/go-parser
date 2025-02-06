@@ -1,5 +1,7 @@
 package db
 
+import "database/sql"
+
 type Enterprise struct {
 	ID             int    `gorm:"primaryKey"`
 	EnterpriseID   int    `gorm:"unique;not null"`
@@ -45,7 +47,7 @@ type ExtendedWorkCenter struct {
 	ID                    int `gorm:"primaryKey"`
 	RecordStartDate       string
 	RecordEndDate         string
-	ProcessingProgram     string
+	ProcessingProgram     sql.NullString
 	EquipmentID           int    `gorm:"not null"`
 	MachineStateType      int    `gorm:"not null"`
 	DownTimeReasons       int    `gorm:"not null"`

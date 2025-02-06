@@ -75,7 +75,6 @@ func GetIndicatorsData(
 	periodEnd string,
 	cookies string,
 ) (data []byte, err error) {
-	const maxRetries = 3
 	externalURL := utils.GoDotEnvVariable("DPA_SERVER") + "/Dashboard/getIndicatorData"
 
 	client := &http.Client{
@@ -93,7 +92,6 @@ func GetIndicatorsData(
 		"DateTimeUntil": "%s"
 	}`, indicatorId, equipmentId, periodStart, periodEnd)
 
-	// for attempt := 1; attempt <= maxRetries; attempt++ {
 	req, err := http.NewRequest("POST", externalURL, strings.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания запроса: %v", err)
@@ -106,8 +104,6 @@ func GetIndicatorsData(
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Попытка завершилась ошибкой: %s", err)
-		// time.Sleep(time.Second * time.Duration(attempt*2))
-		// continue
 	}
 	defer resp.Body.Close()
 
@@ -130,5 +126,60 @@ func GetIndicatorsData(
 	return body, nil
 }
 
-// return nil, fmt.Errorf("все попытки завершились неудачей")
-// }
+func GetExtendedWorkCenterSummary(
+	equipmentId int,
+	dateStart string,
+	dateEnd string,
+	cookies string,
+) (data []byte, err error) {
+
+	externalURL := utils.GoDotEnvVariable("DPA_SERVER") + "/Gantt/getExtendedWorkCenterSummary"
+
+	client := &http.Client{
+		Timeout: 180 * time.Second,
+	}
+
+	payload := fmt.Sprintf(`{
+		"EquipmentIdList": [%d],
+		"Periods": [
+			{
+				"Start": "%s",
+				"End": "%s"
+			}
+		],
+		"ShowJobTypes": [0]
+	}`, equipmentId, dateStart, dateEnd)
+
+	req, err := http.NewRequest("POST", externalURL, strings.NewReader(payload))
+	if err != nil {
+		return nil, fmt.Errorf("ошибка создания запроса: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Cookie", cookies)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Попытка завершилась ошибкой: %s", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("сервер вернул код: %d, тело ответа: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Panicf("ошибка чтения тела ответа: %v", err)
+		file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatal("Failed to open log file:", err)
+		}
+		log.SetOutput(file)
+		return nil, fmt.Errorf("ошибка чтения тела ответа: %v", err)
+	}
+
+	return body, nil
+}

@@ -39,14 +39,8 @@ func NewTimeseriesService(dbpg *gorm.DB, dbch *gorm.DB) *TimeSeriesServiceImpl {
 	}
 }
 
-const (
-	maxConcurrentRequests = 5       // Максимальное количество параллельных запросов
-	requestDelay          = 50      // Задержка между запросами в миллисекундах
-	bufferSize            = 1000000 // Размер буфера для данных
-	chunkSize             = 100000  // Размер чанка для записи в БД
-)
-
 func (ts *TimeSeriesServiceImpl) ParseTimeseries(cookies string) error {
+	const bufferSize = 1000000
 	indicators := ts.GetAllIndicators()
 	log.Printf("Получено индикаторов: %d", len(indicators))
 
@@ -168,6 +162,7 @@ func (ts *TimeSeriesServiceImpl) processTimeRange(
 }
 
 func (ts *TimeSeriesServiceImpl) processDataChunks(dataChan <-chan TimeSeries, errorChan chan<- error) {
+	const chunkSize = 100000
 	buffer := make([]TimeSeries, 0, chunkSize)
 
 	for data := range dataChan {

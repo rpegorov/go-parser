@@ -13,6 +13,7 @@ type Handler struct {
 	indicatorService  parser.IndicatorService
 	timeseriesService parser.TimeseriesService
 	MLService         ml.MLService
+	workCentrService  parser.WorkcentrService
 	CookieStore       *utils.CookieStore
 }
 
@@ -22,6 +23,7 @@ func New(
 	indicatorService parser.IndicatorService,
 	timeseriesService parser.TimeseriesService,
 	MLService ml.MLService,
+	workCentrService parser.WorkcentrService,
 	cookieStore *utils.CookieStore,
 ) *Handler {
 	return &Handler{
@@ -30,6 +32,7 @@ func New(
 		indicatorService:  indicatorService,
 		timeseriesService: timeseriesService,
 		MLService:         MLService,
+		workCentrService:  workCentrService,
 		CookieStore:       cookieStore,
 	}
 }
