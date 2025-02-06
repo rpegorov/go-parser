@@ -184,10 +184,14 @@ func (s *WorkcentrServiceImpl) saveChunkToDB(data []WorkCentrInfo) error {
 	if len(data) == 0 {
 		return nil
 	}
-	if err := s.db.Create(&data).Error; err != nil {
-		return err
+	var records []db.ExtendedWorkCenter
+	for _, info := range data {
+		records = append(records, mapWorkCentrInfoToExtendedWorkCenter(info)...)
 	}
-	return nil
+
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Create(&records).Error
+	})
 }
 
 func (s *WorkcentrServiceImpl) GetAllEquipmentIds() []db.Equipment {
@@ -195,4 +199,29 @@ func (s *WorkcentrServiceImpl) GetAllEquipmentIds() []db.Equipment {
 	s.db.Find(&equipments)
 	fmt.Printf("equipments: %v", equipments)
 	return equipments
+}
+
+func mapWorkCentrInfoToExtendedWorkCenter(info WorkCentrInfo) []db.ExtendedWorkCenter {
+	var result []db.ExtendedWorkCenter
+
+	for _, segment := range info.GanttResult.EquipmentSummaryGanttSegments {
+		for _, reason := range segment.DowntimeInfo.Reasons {
+			result = append(result, db.ExtendedWorkCenter{
+				RecordStartDate:       segment.RecordStartDate,
+				RecordEndDate:         segment.RecordEndDate,
+				ProcessingProgram:     sql.NullString{String: segment.ProcessingProgram.String, Valid: segment.ProcessingProgram.Valid},
+				EquipmentID:           segment.EquipmentID,
+				MachineStateType:      segment.MachineStateType,
+				DownTimeReasons:       reason.DownTimeReasons,
+				ReferenceBookReasonID: reason.ReferenceBookReasonID,
+				ReasonName:            reason.ReasonName,
+				UserName:              reason.UserName,
+				OperatorComment:       reason.OperatorComment,
+				IDRecord:              info.IDRecord,
+				Start:                 info.Start,
+				End:                   info.End,
+			})
+		}
+	}
+	return result
 }
