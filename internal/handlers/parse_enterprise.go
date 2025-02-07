@@ -6,7 +6,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rpegorov/go-parser/internal/api"
-	"github.com/rpegorov/go-parser/internal/utils"
 )
 
 type ParserResponse struct {
@@ -22,8 +21,6 @@ type EnterpriseTree struct {
 	Departments int `json:"departments"`
 	Equipment   int `json:"equipment"`
 }
-
-var externalParserURL = utils.GoDotEnvVariable("DPA_SERVER") + "/EnterpriseStructManagement/getStaticTree"
 
 func (h *Handler) ParseEnterprise(c *fiber.Ctx) error {
 	cookies := h.CookieStore.GetAll()

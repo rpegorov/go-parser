@@ -151,6 +151,7 @@ func GetExtendedWorkCenterSummary(
 	}`, equipmentId, dateStart, dateEnd)
 
 	req, err := http.NewRequest("POST", externalURL, strings.NewReader(payload))
+	fmt.Printf("req: %v", req)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания запроса: %v", err)
 	}
@@ -162,6 +163,71 @@ func GetExtendedWorkCenterSummary(
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Попытка завершилась ошибкой: %s", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("сервер вернул код: %d, тело ответа: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Panicf("ошибка чтения тела ответа: %v", err)
+		file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatal("Failed to open log file:", err)
+		}
+		log.SetOutput(file)
+		return nil, fmt.Errorf("ошибка чтения тела ответа: %v", err)
+	}
+
+	return body, nil
+}
+
+func GetLoggingData(
+	equipmentId int,
+	dateStart string,
+	dateEnd string,
+	cookies string,
+) (data []byte, err error) {
+	externalUrl := utils.GoDotEnvVariable("DPA_SERVER") + "/Dashboard/getErrorLoggingData"
+
+	client := &http.Client{
+		Timeout: 180 * time.Second,
+	}
+
+	payload := fmt.Sprintf(`{
+		"equipments": [%d],
+		"dateFrom": "%s",
+		"dateUntil": "%s",
+		"labelEnabled": false,
+		"periodType": {"id": 0},
+		"dateTimeOffsetFrom": "%s",
+		"dateTimeOffsetUntil": "%s",
+		"itemIds": [%d],
+		"gridOptions": {
+			"sort": null,
+			"requireTotalCount": true,
+			"searchOperation": "contains",
+			"searchValue": null,
+			"userData": {}
+		}
+	}`, equipmentId, dateStart, dateEnd, dateStart, dateEnd, equipmentId)
+
+	req, err := http.NewRequest("POST", externalUrl, strings.NewReader(payload))
+	if err != nil {
+		return nil, fmt.Errorf("ошибка передачи запроса: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Cookie", cookies)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Попытка завершилась ошибкой: %s", err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 

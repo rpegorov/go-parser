@@ -1,7 +1,10 @@
 .env_local
 .idea
 .fleet
+.history
 /cmd/.env_local
+./cmd/app.log
+app.log
 /build
 .lh
 db-volumes

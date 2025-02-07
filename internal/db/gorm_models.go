@@ -59,3 +59,29 @@ type ExtendedWorkCenter struct {
 	Start                 string `gorm:"not null"`
 	End                   string
 }
+
+type LoggingData struct {
+	ID                       int    `gorm:"primaryKey"`
+	TimeDuration             string `gorm:"not null"`
+	TimeDurationDate         string `gorm:"not null"`
+	EquipmentName            string `gorm:"not null"`
+	EquipmentInventoryNumber string `gorm:"not null"`
+	Type                     int    `gorm:"not null"`
+	TypeText                 string `gorm:"not null"`
+	Code                     string `gorm:"not null"`
+	Category                 string `gorm:"not null"`
+	Text                     string `gorm:"not null"`
+	Class                    int    `gorm:"not null"`
+	EventLogId               string `gorm:"not null"`
+	Order                    int    `gorm:"not null"`
+	OldEventLogId            sql.NullString
+	DriverIdentifier         string `gorm:"not null"`
+	EventID                  int    `gorm:"not null"`
+	TimeStamp                string `gorm:"not null"`
+	EventStartTime           string `gorm:"not null"`
+	EventEndTime             string `gorm:"not null"`
+	EventIdentifier          string `gorm:"not null"`
+	Number                   int    `gorm:"not null"`
+	StartDate                string `gorm:"not null"`
+	EndDate                  string `gorm:"not null"`
+}

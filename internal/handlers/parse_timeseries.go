@@ -23,6 +23,5 @@ func (h *Handler) ParseTimeseries(c *fiber.Ctx) error {
 		}
 	}()
 
-	// Возвращаем немедленный ответ клиенту
 	return c.Status(http.StatusOK).JSON(fiber.Map{"message": "Парсинг индикаторов запущен"})
 }

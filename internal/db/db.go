@@ -40,6 +40,7 @@ func initPostgres() *gorm.DB {
 		&Equipment{},
 		&Indicator{},
 		&ExtendedWorkCenter{},
+		&LoggingData{},
 	)
 	if err != nil {
 		log.Fatalf("Ошибка миграции PostgreSQL: %v", err)

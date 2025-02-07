@@ -8,13 +8,14 @@ import (
 )
 
 type Handler struct {
-	enterpriseService parser.EnterpriseService
-	healthService     services.HealthService
-	indicatorService  parser.IndicatorService
-	timeseriesService parser.TimeseriesService
-	MLService         ml.MLService
-	workCenterService parser.WorkcenterService
-	CookieStore       *utils.CookieStore
+	enterpriseService  parser.EnterpriseService
+	healthService      services.HealthService
+	indicatorService   parser.IndicatorService
+	timeseriesService  parser.TimeseriesService
+	MLService          ml.MLService
+	workCenterService  parser.WorkcenterService
+	loggindDataService parser.LoggingData
+	CookieStore        *utils.CookieStore
 }
 
 func New(
@@ -24,15 +25,17 @@ func New(
 	timeseriesService parser.TimeseriesService,
 	MLService ml.MLService,
 	workCenterService parser.WorkcenterService,
+	loggindDataService parser.LoggingData,
 	cookieStore *utils.CookieStore,
 ) *Handler {
 	return &Handler{
-		enterpriseService: enterpriseService,
-		healthService:     healthService,
-		indicatorService:  indicatorService,
-		timeseriesService: timeseriesService,
-		MLService:         MLService,
-		workCenterService: workCenterService,
-		CookieStore:       cookieStore,
+		enterpriseService:  enterpriseService,
+		healthService:      healthService,
+		indicatorService:   indicatorService,
+		timeseriesService:  timeseriesService,
+		MLService:          MLService,
+		workCenterService:  workCenterService,
+		loggindDataService: loggindDataService,
+		CookieStore:        cookieStore,
 	}
 }

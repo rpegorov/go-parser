@@ -23,6 +23,7 @@ func main() {
 	timeseriesService := parser.NewTimeseriesService(databases.PostgresDB, databases.ClickHouseDB)
 	mlService := ml.NewMLService(databases.PostgresDB, databases.ClickHouseDB)
 	workCenterService := parser.NewWorkcenterService(databases.PostgresDB)
+	loggingData := parser.NewLoggingData(databases.PostgresDB)
 
 	app := fiber.New(fiber.Config{Prefork: false})
 	app.Use(middlewares.CookieMiddleware())
@@ -33,6 +34,7 @@ func main() {
 		timeseriesService,
 		mlService,
 		workCenterService,
+		loggingData,
 		cookiesStore,
 	)
 
