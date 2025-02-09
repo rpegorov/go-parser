@@ -77,3 +77,19 @@ func (h *Handler) GetWorkCentrInfoByIdAndDate(c *fiber.Ctx) error {
 		"data": result,
 	})
 }
+
+func (h *Handler) GetLoggingDataByDataRangeAndEqId(c *fiber.Ctx) error {
+	equipmentId := c.Params("id")
+	dateStart := c.Query("start")
+	dateEnd := c.Query("end")
+	result, err := h.MLService.GetLoggingDataByDataRangeAndEqId(equipmentId, dateStart, dateEnd)
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"data": result,
+	})
+}

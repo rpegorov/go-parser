@@ -16,6 +16,7 @@ func RegisterRoutes(app *fiber.App, h *handlers.Handler) {
 	ml.Get("/equipment/:id", h.GetEquipmentById)
 	ml.Get("/workcenter-info/:id", h.GetWorkCentrInfoById)
 	ml.Get("/workcenter-info", h.GetWorkCentrInfoByIdAndDate)
+	ml.Get("/errorLoggindData/:id", h.GetLoggingDataByDataRangeAndEqId)
 
 	parser := api.Group("/parser")
 	parser.Get("/enterprise", h.ParseEnterprise)

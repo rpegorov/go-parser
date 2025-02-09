@@ -14,6 +14,7 @@ type MLService interface {
 	GetEquipmentById(equipmentId string) ([]db.Equipment, error)
 	GetWorkCentrInfoById(equipmentId string) ([]db.ExtendedWorkCenter, error)
 	GetWorkCentrInfoByIdAndDate(equipmentId, dateStart, dateEnd string) ([]db.ExtendedWorkCenter, error)
+	GetLoggingDataByDataRangeAndEqId(equipmentId, dateStart, dateEnd string) ([]db.LoggingData, error)
 }
 
 type MLServiceImpl struct {
@@ -136,6 +137,15 @@ func (s *MLServiceImpl) GetWorkCentrInfoByIdAndDate(equipmentId, dateStart, date
 	}
 	var result = []db.ExtendedWorkCenter{}
 	err = s.dbpg.Where("record_start_date BETWEEN ? AND ? AND equipment_id = ?", dateEnd, dateStart, id).Find(&result).Error
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *MLServiceImpl) GetLoggingDataByDataRangeAndEqId(equipmentInventory, dateStart, dateEnd string) ([]db.LoggingData, error) {
+	var result = []db.LoggingData{}
+	err := s.dbpg.Where("event_start_time BETWEEN ? AND ? AND equipment_inventory_number = ?", dateStart, dateEnd, equipmentInventory).Find(&result).Error
 	if err != nil {
 		return nil, err
 	}
