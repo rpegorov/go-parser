@@ -33,18 +33,18 @@ func initPostgres() *gorm.DB {
 		log.Fatalf("Ошибка подключения к PostgreSQL: %v", err)
 	}
 
-	err = db.AutoMigrate(
-		&Enterprise{},
-		&Site{},
-		&Department{},
-		&Equipment{},
-		&Indicator{},
-		&ExtendedWorkCenter{},
-		&LoggingData{},
-	)
-	if err != nil {
-		log.Fatalf("Ошибка миграции PostgreSQL: %v", err)
-	}
+	// err = db.AutoMigrate(
+	// 	&Enterprise{},
+	// 	&Site{},
+	// 	&Department{},
+	// 	&Equipment{},
+	// 	&Indicator{},
+	// 	&ExtendedWorkCenter{},
+	// 	&LoggingData{},
+	// )
+	// if err != nil {
+	// 	log.Fatalf("Ошибка миграции PostgreSQL: %v", err)
+	// }
 
 	log.Println("Успешное подключение к PostgreSQL")
 	return db
@@ -57,6 +57,6 @@ func initClickHouse() *gorm.DB {
 		panic("failed to connect database")
 	}
 	log.Println("Успешное подключение к ClickHouse")
-	db.AutoMigrate(&TimeSeries{})
+	// db.AutoMigrate(&TimeSeries{})
 	return db
 }
